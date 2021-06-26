@@ -47,7 +47,7 @@ https://forum.mysensors.org/topic/4276/converting-a-sketch-from-1-5-x-to-2-0-x/2
 #define MY_RADIO_RF24
 //#define MY_RADIO_RFM69
 
-#define MY_NODE_ID 22
+#define MY_NODE_ID 23
 /*Makes this static so won't try and find another parent if communication with
 gateway fails*/
 #define MY_PARENT_NODE_ID 0
@@ -75,7 +75,6 @@ gateway fails*/
 #include <MySensors.h> 
 #include <stdint.h>
 #include <math.h> 
-#include <Wire.h>
 #include <BatterySense.hpp>
 
 // Include the Bounce2 library found here :
@@ -86,7 +85,7 @@ gateway fails*/
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 30000;
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 2500;
 
-static const uint32_t DAY_UPDATE_INTERVAL_MS = 10000;
+static const uint32_t DAY_UPDATE_INTERVAL_MS = 2000;
 
 enum child_id_t
 {
@@ -109,6 +108,8 @@ int oldValue=-1;
 
 //Create an instance of the sensor objects
 MyMessage msgVolt(CHILD_ID_VOLTAGE, V_VOLTAGE);
+MyMessage msgDoor(CHILD_ID_DOOR, V_TRIPPED);
+
 void switchClock(unsigned char clk);
 
 /*Set true to have clock throttle back, or false to not throttle*/
@@ -142,15 +143,12 @@ void receiveTime(unsigned long ts)
 initialised.*/
 void setup()
 {
+  pinMode(DOOR_PIN,INPUT_PULLUP);
   
-  Wire.begin();
-  pinMode(DOOR_PIN,OUTPUT);
-  // Activate internal pull-up
-  digitalWrite(DOOR_PIN,HIGH);
   Serial.begin(9600);
 
   // After setting up the button, setup debouncer
-  debouncer.attach(BUTTON_PIN);
+  debouncer.attach(DOOR_PIN);
   debouncer.interval(5);
   
 }
@@ -171,31 +169,9 @@ void loop()
 
   uint32_t update_interval_ms = DAY_UPDATE_INTERVAL_MS;
 
-  clockSwitchCount++;
-  #if DEBUG_RCC
-  Serial.print("clockSwitchCount = ");
-  Serial.print(clockSwitchCount,DEC);
-  Serial.println();
-  #endif
-  
   // When we wake up the 5th time after power on, switch to 1Mhz clock
   // This allows us to print debug messages on startup (as serial port is dependent on oscillator settings).
-  if ( (clockSwitchCount == 5) && throttlefreq)
-  {
-    /* Switch to 4Mhz by setting clock prescaler to divide by 2 for the reminder of the sketch, 
-     * to save power but more importantly to allow operation down to 1.8V
-     * 
-      */
-    
-    #if DEBUG_RCC
-    Serial.print("Setting CPU Freq to 4MHz");
-    Serial.println();
-    #endif
-    switchClock(0x01); // divide by 2, to give 4MHz on 8MHz, 3V3 Pro Mini
-    cpu_is_throttled = true;
-    throttlefreq = false;
-  } //end if
-
+  
   uint16_t battLevel = batt.getVoltage();
   send(msgVolt.set(battLevel,1));
 
@@ -205,7 +181,10 @@ void loop()
  
   if (value != oldValue) {
      // Send in the new value
-     send(msg.set(value==HIGH ? 1 : 0));
+     send(msgDoor.set(value==HIGH ? 1 : 0));
+     Serial.print("Door : ");
+     Serial.print(value);
+     Serial.println();
      oldValue = value;
   }
 
