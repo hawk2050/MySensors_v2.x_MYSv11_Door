@@ -68,9 +68,9 @@ gateway fails*/
 */
 #define MY_RF24_CE_PIN 9
 #define MY_RF24_CS_PIN 10
-#define MY_RF24_CHANNEL 100
+#define MY_RF24_CHANNEL 76
 
-#define DOOR_PIN 6
+#define DOOR_PIN 3 //Must be an interrupt capable pin, either 2 or 3
 
 #include <MySensors.h> 
 #include <stdint.h>
@@ -79,13 +79,16 @@ gateway fails*/
 
 // Include the Bounce2 library found here :
 // https://github.com/thomasfredericks/Bounce2
-#include <Bounce2.h>
+//#include <Bounce2.h>
 
 // Sleep time between sensor updates (in milliseconds)
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 30000;
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 2500;
 
-static const uint32_t DAY_UPDATE_INTERVAL_MS = 2000;
+#define SLEEP_TIME 20000
+uint32_t sleepTime = SLEEP_TIME;
+int8_t wakeupReason = MY_WAKE_UP_BY_TIMER; // Initial value, will be set by sleep after the first run
+
 
 enum child_id_t
 {
@@ -97,10 +100,8 @@ enum child_id_t
   CHILD_ID_DOOR
 };
 
-uint32_t clockSwitchCount = 0;
-
-Bounce debouncer = Bounce(); 
-int oldValue=-1;
+//Bounce debouncer = Bounce(); 
+//int oldValue=-1;
 
 /*****************************/
 /********* FUNCTIONS *********/
@@ -110,11 +111,6 @@ int oldValue=-1;
 MyMessage msgVolt(CHILD_ID_VOLTAGE, V_VOLTAGE);
 MyMessage msgDoor(CHILD_ID_DOOR, V_TRIPPED);
 
-void switchClock(unsigned char clk);
-
-/*Set true to have clock throttle back, or false to not throttle*/
-bool throttlefreq = false;
-bool cpu_is_throttled = false;
 
 BatteryLevel batt;
 /**********************************/
@@ -148,8 +144,8 @@ void setup()
   Serial.begin(9600);
 
   // After setting up the button, setup debouncer
-  debouncer.attach(DOOR_PIN);
-  debouncer.interval(5);
+  /*debouncer.attach(DOOR_PIN);
+  debouncer.interval(5);*/
   
 }
 
@@ -167,46 +163,39 @@ void presentation()
 void loop()
 {
 
-  uint32_t update_interval_ms = DAY_UPDATE_INTERVAL_MS;
-
-  // When we wake up the 5th time after power on, switch to 1Mhz clock
-  // This allows us to print debug messages on startup (as serial port is dependent on oscillator settings).
   
-  uint16_t battLevel = batt.getVoltage();
-  send(msgVolt.set(battLevel,1));
 
-  debouncer.update();
+  /*debouncer.update();*/
   // Get the update value
-  int value = debouncer.read();
+  /*int value = debouncer.read();*/
+  if (wakeupReason == digitalPinToInterrupt(DOOR_PIN)) 
+  {
+    sleepTime = getSleepRemaining();
+    int value = digitalRead(DOOR_PIN);
  
-  if (value != oldValue) {
+  
      // Send in the new value
-     send(msgDoor.set(value==HIGH ? 1 : 0));
+     //send(msgDoor.set(value==HIGH ? 1 : 0));
+     send(msgDoor.set(value));
      Serial.print("Door : ");
      Serial.print(value);
      Serial.println();
-     oldValue = value;
   }
-
-
-
-  sleep(update_interval_ms); 
+  else if (wakeupReason == MY_WAKE_UP_BY_TIMER)
+  {
+    sleepTime = SLEEP_TIME;
+    // Do periodical stuff here
+    // Toggles the LED every 15 minutes
+    /*ledState = !ledState;
+    digitalWrite(LED_PIN, ledState);*/
+    uint16_t battLevel = batt.getVoltage();
+    send(msgVolt.set(battLevel,1));
+  }
+  
+  wakeupReason = sleep(digitalPinToInterrupt(DOOR_PIN), CHANGE, sleepTime); 
   
   
 } //end loop
 
-
-
-
-
-void switchClock(unsigned char clk)
-{
-  cli();
-
-  CLKPR = 1<<CLKPCE; // Set CLKPCE to enable clk switching
-  CLKPR = clk;
-  sei();
-  
-}
 
 
