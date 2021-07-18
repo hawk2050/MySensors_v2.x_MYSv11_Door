@@ -68,7 +68,7 @@ gateway fails*/
 */
 #define MY_RF24_CE_PIN 9
 #define MY_RF24_CS_PIN 10
-#define MY_RF24_CHANNEL 76
+#define MY_RF24_CHANNEL 100
 
 #define DOOR_PIN 3 //Must be an interrupt capable pin, either 2 or 3
 
@@ -85,7 +85,7 @@ gateway fails*/
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 30000;
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 2500;
 
-#define SLEEP_TIME 20000
+#define SLEEP_TIME 900000
 uint32_t sleepTime = SLEEP_TIME;
 int8_t wakeupReason = MY_WAKE_UP_BY_TIMER; // Initial value, will be set by sleep after the first run
 
