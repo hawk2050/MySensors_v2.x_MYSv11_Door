@@ -100,8 +100,6 @@ enum child_id_t
   CHILD_ID_DOOR
 };
 
-//Bounce debouncer = Bounce(); 
-//int oldValue=-1;
 
 /*****************************/
 /********* FUNCTIONS *********/
@@ -142,10 +140,6 @@ void setup()
   pinMode(DOOR_PIN,INPUT_PULLUP);
   
   Serial.begin(9600);
-
-  // After setting up the button, setup debouncer
-  /*debouncer.attach(DOOR_PIN);
-  debouncer.interval(5);*/
   
 }
 
@@ -162,34 +156,22 @@ void presentation()
 
 void loop()
 {
-
-  
-
-  /*debouncer.update();*/
-  // Get the update value
-  /*int value = debouncer.read();*/
   if (wakeupReason == digitalPinToInterrupt(DOOR_PIN)) 
   {
     sleepTime = getSleepRemaining();
     int value = digitalRead(DOOR_PIN);
  
-  
      // Send in the new value
-     //send(msgDoor.set(value==HIGH ? 1 : 0));
      send(msgDoor.set(value));
-     Serial.print("Door : ");
-     Serial.print(value);
-     Serial.println();
+     
   }
   else if (wakeupReason == MY_WAKE_UP_BY_TIMER)
   {
     sleepTime = SLEEP_TIME;
-    // Do periodical stuff here
-    // Toggles the LED every 15 minutes
-    /*ledState = !ledState;
-    digitalWrite(LED_PIN, ledState);*/
+    int value = digitalRead(DOOR_PIN);
     uint16_t battLevel = batt.getVoltage();
     send(msgVolt.set(battLevel,1));
+    send(msgDoor.set(value));
   }
   
   wakeupReason = sleep(digitalPinToInterrupt(DOOR_PIN), CHANGE, sleepTime); 
