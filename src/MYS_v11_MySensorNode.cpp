@@ -41,13 +41,13 @@ https://forum.mysensors.org/topic/4276/converting-a-sketch-from-1-5-x-to-2-0-x/2
 
 // Enable debug prints to serial monitor
 //#define MY_DEBUG
-#define DEBUG_RCC 1
+#define DEBUG_RCC 0
 
 // Enable and select radio type attached
 #define MY_RADIO_RF24
 //#define MY_RADIO_RFM69
 
-#define MY_NODE_ID 23
+#define MY_NODE_ID 24
 /*Makes this static so won't try and find another parent if communication with
 gateway fails*/
 #define MY_PARENT_NODE_ID 0
@@ -68,7 +68,9 @@ gateway fails*/
 */
 #define MY_RF24_CE_PIN 9
 #define MY_RF24_CS_PIN 10
-#define MY_RF24_CHANNEL 100
+//#define MY_RF24_CHANNEL 100 //Our room gateway
+#define MY_RF24_CHANNEL 76 //Office gateway
+
 
 #define DOOR_PIN 3 //Must be an interrupt capable pin, either 2 or 3
 
@@ -85,7 +87,7 @@ gateway fails*/
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 30000;
 //static const uint32_t DAY_UPDATE_INTERVAL_MS = 2500;
 
-#define SLEEP_TIME 900000
+#define SLEEP_TIME 300000
 uint32_t sleepTime = SLEEP_TIME;
 int8_t wakeupReason = MY_WAKE_UP_BY_TIMER; // Initial value, will be set by sleep after the first run
 
